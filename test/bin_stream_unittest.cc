@@ -279,4 +279,4 @@ TEST_F(TestBinStream, WithInheritance) {
 }
 
 }  // namespace
-}  // namespace hb
+}  // namespace husky
