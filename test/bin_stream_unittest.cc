@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "hb/bin_stream.h"
+#include "husky-base/bin_stream.h"
 
 #include <map>
 #include <string>
@@ -21,10 +21,10 @@
 
 #include "gtest/gtest.h"
 
-namespace hb {
+namespace husky {
 namespace {
 
-using hb::BinStream;
+using ::husky::base::BinStream;
 
 class TestBinStream : public testing::Test {
    public:

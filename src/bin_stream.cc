@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "hb/bin_stream.h"
+#include "husky-base/bin_stream.h"
 
 #include <string>
 #include <vector>
 
-namespace hb {
+namespace husky {
+namespace base {
 
 BinStream::BinStream() : front_(0) {}
 
@@ -135,4 +136,5 @@ BinStream& operator>>(BinStream& stream, std::vector<bool>& v) {
 
 BinStream::~BinStream() {}
 
-}  // namespace hb
+}  // namespace base
+}  // namespace husky

@@ -26,9 +26,10 @@
 #include <utility>
 #include <vector>
 
-#include "hb/macros.h"
+#include "husky-base/macros.h"
 
-namespace hb {
+namespace husky {
+namespace base {
 
 class BinStream {
    public:
@@ -275,4 +276,5 @@ Value deser(BinStream& in) {
     return v;
 }
 
-}  // namespace hb
+}  // namespace base
+}  // namespace husky
