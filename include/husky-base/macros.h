@@ -14,7 +14,8 @@
 
 #pragma once
 
-namespace hb {
+namespace husky {
+namespace base {
 
 // workaround for missing "is_trivially_copyable" in g++ < 5.0
 #if __GNUG__ && __GNUC__ < 5
@@ -23,4 +24,5 @@ namespace hb {
 #define IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
 #endif
 
-}  // namespace hb
+}  // namespace base
+}  // namespace husky
