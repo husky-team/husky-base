@@ -17,17 +17,29 @@ cmake_minimum_required(VERSION 3.0.2)
 
 set(CMAKE_CXX_STANDARD 14)
 
+# Dependencies
+find_path(ZMQ_INCLUDE_DIR NAMES zmq.hpp)
+find_library(ZMQ_LIBRARY NAMES zmq)
+if(ZMQ_INCLUDE_DIR AND ZMQ_LIBRARY)
+  message(STATUS "Found ZeroMQ:")
+  message(STATUS "  (Headers)       ${ZMQ_INCLUDE_DIR}")
+  message(STATUS "  (Library)       ${ZMQ_LIBRARY}")
+elseif()
+  message(ERROR "ZeroMQ not found")
+endif()
+
+include_directories(${ZMQ_INCLUDE_DIR})
 include_directories("include")
 
 FILE(GLOB husky-base-sources "src/*.cc")
 
 if(ENABLE_SHARED)
   add_library(husky-base SHARED ${husky-base-sources})
-  set_property(TARGET husky-base PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
 else()
   add_library(husky-base STATIC ${husky-base-sources})
-  set_property(TARGET husky-base PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
 endif()
+target_link_libraries(husky-base ${ZMQ_LIBRARY})
+set_property(TARGET husky-base PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
 
 include(CTest)
 add_subdirectory(test)
