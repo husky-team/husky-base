@@ -33,13 +33,17 @@ include_directories("include")
 
 FILE(GLOB husky-base-sources "src/*.cc")
 
-if(ENABLE_SHARED)
-  add_library(husky-base SHARED ${husky-base-sources})
-else()
-  add_library(husky-base STATIC ${husky-base-sources})
-endif()
+add_library(husky-base STATIC ${husky-base-sources})
 target_link_libraries(husky-base ${ZMQ_LIBRARY})
 set_property(TARGET husky-base PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
+
+add_library(husky-base-static STATIC ${husky-base-sources})
+target_link_libraries(husky-base-static ${ZMQ_LIBRARY})
+set_property(TARGET husky-base-static PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
+
+add_library(husky-base-shared SHARED ${husky-base-sources})
+target_link_libraries(husky-base-shared ${ZMQ_LIBRARY})
+set_property(TARGET husky-base-shared PROPERTY CXX_STANDARD ${CMAKE_CXX_STANDARD})
 
 include(CTest)
 add_subdirectory(test)

@@ -44,10 +44,6 @@ matrix:
 script:
   - mkdir release
   - cd release
-  - cmake -DCMAKE_BUILD_TYPE=release -DENABLE_SHARED=1 ..
-  - make -j4
-  - make test
-  - make clean
   - cmake -DCMAKE_BUILD_TYPE=release ..
   - make -j4
   - make test
