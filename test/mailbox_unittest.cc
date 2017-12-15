@@ -22,6 +22,10 @@
 
 #include "husky-base/mailbox.h"
 #include "husky-base/mailbox_eventloop.h"
+#include "husky-base/mailbox_sender.h"
+#include "husky-base/mailbox_recver.h"
+
+// TODO This contains unittests for different components of Mailbox. They should be separated later.
 
 namespace husky {
 namespace base {
@@ -74,6 +78,40 @@ TEST_F(TestMailbox, SendCompleteTriggerEventLoop) {
   mailbox.SendComplete(0, 0);
   std::this_thread::sleep_for(500ms);
   EXPECT_TRUE(send_complete_triggered);
+}
+
+TEST_F(TestMailbox, SenderInitDestroy) {
+  MailboxSender sender({}, &zmq_context_);
+}
+
+TEST_F(TestMailbox, RecverInitDestroy) {
+  MailboxRecver recver("inproc://mailbox-recver", &zmq_context_);
+}
+
+TEST_F(TestMailbox, SendRecvSimple) {
+  using namespace std::chrono_literals;
+
+  MailboxAddressBook addr_book;
+  addr_book.AddProcess(0, "inproc://mailbox-recver");
+  MailboxSender sender(addr_book, &zmq_context_);
+  MailboxRecver recver("inproc://mailbox-recver", &zmq_context_);
+  MailboxEventLoop event_loop(&zmq_context_);
+  event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+  Mailbox mailbox(&zmq_context_);
+  bool recv_triggered = false;
+  mailbox.SetRecvAvailableHandler(0, [&](int local_shard_id, int progress, BinStream* bin_stream){
+      double data;
+      (*bin_stream) >> data;
+      EXPECT_EQ(3.14, data);
+      EXPECT_EQ(0, local_shard_id);
+      EXPECT_EQ(0, progress);
+      recv_triggered = true;
+    });
+  BinStream* bin_stream = new BinStream();
+  (*bin_stream) << 3.14;
+  sender.Send({0, 0}, 0, 0, bin_stream);
+  std::this_thread::sleep_for(500ms);
+  EXPECT_TRUE(recv_triggered);
 }
 
 }  // namespace

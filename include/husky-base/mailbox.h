@@ -32,7 +32,7 @@ namespace base {
 
 class Mailbox {
  public:
-  typedef std::function<void(int progress, BinStream*)> RecvAvailableHandlerType;
+  typedef std::function<void(int local_shard_id, int progress, BinStream*)> RecvAvailableHandlerType;
   typedef std::function<void(int progress)> RecvCompleteHandlerType;
 
   explicit Mailbox(zmq::context_t* zmq_context);

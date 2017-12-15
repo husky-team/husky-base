@@ -13,7 +13,7 @@ namespace base {
 
 class MailboxEventLoop {
  public:
-  typedef std::function<void(int progress, BinStream*)> RecvAvailableHandlerType;
+  typedef std::function<void(int local_shard_id, int progress, BinStream*)> RecvAvailableHandlerType;
   typedef std::function<void(int progress)> RecvCompleteHandlerType;
   typedef std::function<void(Shard shard, int channel_id, int progress, BinStream*)> SendHandlerType;
   typedef std::function<void(int channel_id, int progress)> SendCompleteHandlerType;
@@ -21,6 +21,7 @@ class MailboxEventLoop {
   explicit MailboxEventLoop(zmq::context_t* zmq_context);
   ~MailboxEventLoop();
 
+  // There following two methods are not thread-safe, since we assume that they are set up at the very beginning. If they need to be changed later, we need to provide thread-safe ways
   void OnSend(SendHandlerType handler);
   void OnSendComplete(SendCompleteHandlerType handler);
  protected:
