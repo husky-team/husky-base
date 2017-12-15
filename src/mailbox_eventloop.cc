@@ -14,10 +14,11 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
         int type = zmq_recv_int32(&event_loop_socket);
         switch (type) {
           case MAILBOX_EVENT_RECV_COMM: {
+            int local_shard_id = zmq_recv_int32(&event_loop_socket);
             int channel_id = zmq_recv_int32(&event_loop_socket);
             int progress = zmq_recv_int32(&event_loop_socket);
             BinStream* bin_stream = reinterpret_cast<BinStream*>(zmq_recv_int64(&event_loop_socket));
-            recv_available_handlers_.at(channel_id)(progress, bin_stream);
+            recv_available_handlers_.at(channel_id)(local_shard_id, progress, bin_stream);
             break;
           } case MAILBOX_EVENT_RECV_COMM_COMPLETE: {
             int channel_id = zmq_recv_int32(&event_loop_socket);
