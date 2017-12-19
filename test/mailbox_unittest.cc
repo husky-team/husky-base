@@ -85,7 +85,7 @@ TEST_F(TestMailbox, SenderInitDestroy) {
 }
 
 TEST_F(TestMailbox, RecverInitDestroy) {
-  MailboxRecver recver("inproc://mailbox-recver", &zmq_context_);
+  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_);
 }
 
 TEST_F(TestMailbox, SendRecvSimple) {
@@ -94,7 +94,7 @@ TEST_F(TestMailbox, SendRecvSimple) {
   MailboxAddressBook addr_book;
   addr_book.AddProcess(0, "inproc://mailbox-recver");
   MailboxSender sender(addr_book, &zmq_context_);
-  MailboxRecver recver("inproc://mailbox-recver", &zmq_context_);
+  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_);
   MailboxEventLoop event_loop(&zmq_context_);
   event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
   Mailbox mailbox(&zmq_context_);
@@ -107,6 +107,7 @@ TEST_F(TestMailbox, SendRecvSimple) {
       EXPECT_EQ(0, progress);
       recv_triggered = true;
     });
+  std::this_thread::sleep_for(500ms);
   BinStream* bin_stream = new BinStream();
   (*bin_stream) << 3.14;
   sender.Send({0, 0}, 0, 0, bin_stream);
