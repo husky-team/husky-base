@@ -5,10 +5,10 @@
 namespace husky {
 namespace base {
 
-MailboxRecver::MailboxRecver(const std::string& addr, zmq::context_t* zmq_context) : addr_(addr), zmq_context_(zmq_context) {
+MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& connect_addr, zmq::context_t* zmq_context) : bind_addr_(bind_addr), connect_addr_(connect_addr), zmq_context_(zmq_context) {
   thread_.reset(new std::thread([=](){
       zmq::socket_t recv_socket(*zmq_context_, zmq::socket_type::pull);
-      recv_socket.bind(addr_);
+      recv_socket.bind(bind_addr_);
 
       zmq::socket_t event_socket(*zmq_context_, zmq::socket_type::push);
       event_socket.connect("inproc://mailbox-event-loop");
@@ -46,7 +46,7 @@ MailboxRecver::MailboxRecver(const std::string& addr, zmq::context_t* zmq_contex
 
 MailboxRecver::~MailboxRecver() {
   zmq::socket_t shutdown_sock(*zmq_context_, zmq::socket_type::push);
-  shutdown_sock.connect(addr_);
+  shutdown_sock.connect(connect_addr_);
   zmq_send_int32(&shutdown_sock, MAILBOX_EVENT_SHUTDOWN);
   thread_->join();
 }
