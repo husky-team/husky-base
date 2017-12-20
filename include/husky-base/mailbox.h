@@ -15,9 +15,9 @@
 #pragma once
 
 #include <condition_variable>
+#include <functional>
 #include <string>
 #include <thread>
-#include <functional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -74,6 +74,7 @@ class Mailbox {
   ///
   /// @param handler The handler to use
   void SetRecvCompleteHandler(int channel_id, RecvCompleteHandlerType handler);
+
  protected:
   zmq::context_t* zmq_context_;
   std::unique_ptr<zmq::socket_t> socket_;
