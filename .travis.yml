@@ -1,6 +1,6 @@
 sudo: required
 dist: trusty
-group: edge
+group: travis_latest
 
 language: python  # workaround for not setting CC/CXX with default value
 
@@ -8,11 +8,13 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - llvm-toolchain-precise-3.9
     packages:
       - build-essential
       - cmake
       - gcc-6
       - g++-6
+      - clang-format-3.9
 
 before_install:
   - sudo apt-get install -qq libzmq3-dev mercurial git
@@ -36,6 +38,11 @@ install:
   - cd ../..
   - rm -rf tmp
 
+before_script:
+  - export HUSKY_BASE_ROOT=.
+  - export CLANG_FORMAT=clang-format-3.9
+  - ./scripts/clang-format.py -o check
+
 matrix:
   include:
     - compiler: "gcc-6"
@@ -46,4 +53,4 @@ script:
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=release ..
   - make -j4
-  - make test
+  - ./test/husky-base_unit_tests --gtest_shuffle
