@@ -171,6 +171,50 @@ BinStream& operator>>(BinStream& stream, std::map<K, V>& map) {
   return stream;
 }
 
+template <typename K>
+BinStream& operator<<(BinStream& stream, const std::set<K>& set) {
+  size_t len = set.size();
+  stream << len;
+  for (auto& elem : set)
+    stream << elem;
+  return stream;
+}
+
+template <typename K>
+BinStream& operator>>(BinStream& stream, std::set<K>& set) {
+  size_t len;
+  stream >> len;
+  set.clear();
+  for (int i = 0; i < len; ++i) {
+    K elem;
+    stream >> elem;
+    set.insert(elem);
+  }
+  return stream;
+}
+
+template <typename K>
+BinStream& operator<<(BinStream& stream, const std::unordered_set<K>& unordered_set) {
+  size_t len = unordered_set.size();
+  stream << len;
+  for (auto& elem : unordered_set)
+    stream << elem;
+  return stream;
+}
+
+template <typename K>
+BinStream& operator>>(BinStream& stream, std::unordered_set<K>& unordered_set) {
+  size_t len;
+  stream >> len;
+  unordered_set.clear();
+  for (int i = 0; i < len; ++i) {
+    K elem;
+    stream >> elem;
+    unordered_set.insert(elem);
+  }
+  return stream;
+}
+
 template <typename K, typename V>
 BinStream& operator<<(BinStream& stream, const std::unordered_map<K, V>& unordered_map) {
   size_t len = unordered_map.size();
