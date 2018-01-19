@@ -44,7 +44,7 @@ void MailboxSender::SendComplete(int channel_id, int progress) {
   // TODO Could also let the upper layers decide how many processes it wants to notify
   for (auto& proc_sender : senders_) {
     auto* sender = proc_sender.second.get();
-    zmq_sendmore_int32(sender, MAILBOX_COMM);
+    zmq_sendmore_int32(sender, MAILBOX_COMM_COMPLETE);
     zmq_sendmore_int32(sender, channel_id);
     zmq_send_int32(sender, progress);
   }
