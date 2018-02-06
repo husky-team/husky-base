@@ -14,15 +14,19 @@
 
 #pragma once
 
-// Mailbox event types
-const int MAILBOX_EVENT_RECV_COMM = 1;
-const int MAILBOX_EVENT_RECV_COMM_COMPLETE = 2;
-const int MAILBOX_EVENT_SET_RECV_COMM_HANDLER = 3;
-const int MAILBOX_EVENT_SET_RECV_COMM_COMPLETE_HANDLER = 4;
-const int MAILBOX_EVENT_SEND_COMM = 5;
-const int MAILBOX_EVENT_SEND_COMM_COMPLETE = 6;
-const int MAILBOX_EVENT_SHUTDOWN = 7;
+#include <functional>
 
-// Mailbox communication types
-const int MAILBOX_COMM = 8;
-const int MAILBOX_COMM_COMPLETE = 9;
+#include "husky-base/shard.h"
+
+namespace husky {
+namespace base {
+
+// Mailbox event types
+enum MailboxEventType : int32_t { RecvComm = 1, SetRecvHandler = 2, SendComm = 3, Shutdown = 4 };
+
+// Typedefs for send/recv handler
+typedef std::function<void(Shard shard, int channel_id, BinStream* payload)> MailboxSendHandlerType;
+typedef std::function<void(int local_shard_id, BinStream* payload)> MailboxRecvHandlerType;
+
+}  // namespace base
+}  // namespace husky

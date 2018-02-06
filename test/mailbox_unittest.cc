@@ -53,31 +53,13 @@ TEST_F(TestMailbox, SendTriggerEventLoop) {
   Mailbox mailbox(&zmq_context_);
   MailboxEventLoop event_loop(&zmq_context_);
   bool send_triggered = false;
-  event_loop.OnSend([&](Shard, int channel_id, int progress, BinStream*){
+  event_loop.OnSend([&](Shard, int channel_id, BinStream*){
       send_triggered = true;
       EXPECT_EQ(0, channel_id);
-      EXPECT_EQ(0, progress);
     });
-  mailbox.Send({0, 0}, 0, 0, nullptr);
+  mailbox.Send({0, 0}, 0, nullptr);
   std::this_thread::sleep_for(500ms);
   EXPECT_TRUE(send_triggered);
-}
-
-TEST_F(TestMailbox, SendCompleteTriggerEventLoop) {
-  using namespace std::chrono_literals;
-
-  zmq::context_t zmq_context;
-  Mailbox mailbox(&zmq_context_);
-  MailboxEventLoop event_loop(&zmq_context_);
-  bool send_complete_triggered = false;
-  event_loop.OnSendComplete([&](int channel_id, int progress){
-      send_complete_triggered = true;
-      EXPECT_EQ(0, channel_id);
-      EXPECT_EQ(0, progress);
-    });
-  mailbox.SendComplete(0, 0);
-  std::this_thread::sleep_for(500ms);
-  EXPECT_TRUE(send_complete_triggered);
 }
 
 TEST_F(TestMailbox, SenderInitDestroy) {
@@ -96,21 +78,20 @@ TEST_F(TestMailbox, SendRecvSimple) {
   MailboxSender sender(addr_book, &zmq_context_);
   MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_);
   MailboxEventLoop event_loop(&zmq_context_);
-  event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+  event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   Mailbox mailbox(&zmq_context_);
   bool recv_triggered = false;
-  mailbox.SetRecvAvailableHandler(0, [&](int local_shard_id, int progress, BinStream* bin_stream){
+  mailbox.OnRecv(0, [&](int local_shard_id, BinStream* payload){
       double data;
-      (*bin_stream) >> data;
+      *payload >> data;
       EXPECT_EQ(3.14, data);
       EXPECT_EQ(0, local_shard_id);
-      EXPECT_EQ(0, progress);
       recv_triggered = true;
     });
   std::this_thread::sleep_for(500ms);
-  BinStream* bin_stream = new BinStream();
-  (*bin_stream) << 3.14;
-  sender.Send({0, 0}, 0, 0, bin_stream);
+  BinStream* payload = new BinStream();
+  *payload << 3.14;
+  sender.Send({0, 0}, 0, payload);
   std::this_thread::sleep_for(500ms);
   EXPECT_TRUE(recv_triggered);
 }

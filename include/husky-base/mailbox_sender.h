@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
+#include <unordered_map>
 
 #include "zmq.hpp"
 
@@ -30,15 +30,13 @@ class MailboxSender {
  public:
   MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t* zmq_context);
 
-  // This takes over the ownership of bin_stream
-  void Send(Shard shard, int channel_id, int progress, BinStream* bin_stream);
-
-  void SendComplete(int channel_id, int progress);
+  // This takes over the ownership of the payload
+  void Send(Shard shard, int channel_id, BinStream* payload);
 
  protected:
   MailboxAddressBook addr_book_;
   zmq::context_t* zmq_context_;
-  std::map<int, std::shared_ptr<zmq::socket_t>> senders_;
+  std::unordered_map<int, std::shared_ptr<zmq::socket_t>> senders_;
 };
 
 }  // namespace base

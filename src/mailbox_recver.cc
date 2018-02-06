@@ -16,7 +16,7 @@
 
 #include <string>
 
-#include "husky-base/mailbox_constants.h"
+#include "husky-base/mailbox_types.h"
 #include "husky-base/zmq_helpers.h"
 
 namespace husky {
@@ -35,27 +35,18 @@ MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& co
     while (!shutdown) {
       int comm_type = zmq_recv_int32(&recv_socket);
       switch (comm_type) {
-      case MAILBOX_COMM: {
+      case MailboxEventType::RecvComm: {
+        // Relay the event to the event loop
         int local_shard_id = zmq_recv_int32(&recv_socket);
         int channel_id = zmq_recv_int32(&recv_socket);
-        int progress = zmq_recv_int32(&recv_socket);
         auto* bin_stream = new BinStream(std::move(zmq_recv_binstream(&recv_socket)));
-        zmq_sendmore_int32(&event_socket, MAILBOX_EVENT_RECV_COMM);
+        zmq_sendmore_int32(&event_socket, MailboxEventType::RecvComm);
         zmq_sendmore_int32(&event_socket, local_shard_id);
         zmq_sendmore_int32(&event_socket, channel_id);
-        zmq_sendmore_int32(&event_socket, progress);
         zmq_send_int64(&event_socket, reinterpret_cast<uint64_t>(bin_stream));
         break;
       }
-      case MAILBOX_COMM_COMPLETE: {
-        int channel_id = zmq_recv_int32(&recv_socket);
-        int progress = zmq_recv_int32(&recv_socket);
-        zmq_sendmore_int32(&event_socket, MAILBOX_EVENT_RECV_COMM_COMPLETE);
-        zmq_sendmore_int32(&event_socket, channel_id);
-        zmq_send_int32(&event_socket, progress);
-        break;
-      }
-      case MAILBOX_EVENT_SHUTDOWN: {
+      case MailboxEventType::Shutdown: {
         shutdown = true;
         break;
       }
@@ -67,7 +58,7 @@ MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& co
 MailboxRecver::~MailboxRecver() {
   zmq::socket_t shutdown_sock(*zmq_context_, zmq::socket_type::push);
   shutdown_sock.connect(connect_addr_);
-  zmq_send_int32(&shutdown_sock, MAILBOX_EVENT_SHUTDOWN);
+  zmq_send_int32(&shutdown_sock, MailboxEventType::Shutdown);
   thread_->join();
 }
 

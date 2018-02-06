@@ -25,16 +25,16 @@
 #include "zmq.hpp"
 
 #include "husky-base/bin_stream.h"
+#include "husky-base/mailbox_types.h"
 #include "husky-base/shard.h"
 
 namespace husky {
 namespace base {
 
+// Endpoint for sending and recieving communication. This class is not thread-safe. A Mailbox instance is supposed to be
+// used by the same thread.
 class Mailbox {
  public:
-  typedef std::function<void(int local_shard_id, int progress, BinStream*)> RecvAvailableHandlerType;
-  typedef std::function<void(int progress)> RecvCompleteHandlerType;
-
   explicit Mailbox(zmq::context_t* zmq_context);
   virtual ~Mailbox();
 
@@ -48,16 +48,9 @@ class Mailbox {
   /// @param channel_id ID of the Channel for the communication.
   /// @param progress Progress of the communication. Progress should always
   ///        be increasing.
-  /// @param bin_stream The actual communication in the form of BinStream.
-  void Send(Shard shard, int channel_id, int progress, BinStream* bin_stream);
-
-  /// \brief Indicate that a round of outgoing communication finishes.
-  ///
-  /// This method must be called after a round of outgoing communication.
-  ///
-  /// @param channel_id Channel of the communication.
-  /// @param progress Progress of the corresponding Channel.
-  void SendComplete(int channel_id, int progress);
+  /// @param payload The actual communication in the form of BinStream. This method takes over the ownership of the
+  /// payload.
+  void Send(Shard shard, int channel_id, BinStream* payload);
 
   /// \brief Set the handler for new incoming communication
   ///
@@ -65,15 +58,7 @@ class Mailbox {
   /// (in the form of BinStream).
   ///
   /// @param handler The handler to use
-  void SetRecvAvailableHandler(int channel_id, RecvAvailableHandlerType handler);
-
-  /// \brief Set the handler at the completion incoming communication
-  ///
-  /// The handler will be used once the communication of a specific (channel_id, progress)
-  /// pair finishes.
-  ///
-  /// @param handler The handler to use
-  void SetRecvCompleteHandler(int channel_id, RecvCompleteHandlerType handler);
+  void OnRecv(int channel_id, MailboxRecvHandlerType handler);
 
  protected:
   zmq::context_t* zmq_context_;
