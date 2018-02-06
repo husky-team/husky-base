@@ -41,6 +41,7 @@ class MailboxEventLoop {
   std::unique_ptr<std::thread> thread_;
   zmq::context_t* zmq_context_;
   std::unordered_map<int, MailboxRecvHandlerType> recv_handlers_;
+  std::unordered_map<int, std::vector<std::pair<int, BinStream*>>> cached_comm_;
   MailboxSendHandlerType send_handler_;
 };
 

@@ -58,7 +58,7 @@ TEST_F(TestMailbox, SendTriggerEventLoop) {
       EXPECT_EQ(0, channel_id);
     });
   mailbox.Send({0, 0}, 0, nullptr);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(100ms);
   EXPECT_TRUE(send_triggered);
 }
 
@@ -88,11 +88,38 @@ TEST_F(TestMailbox, SendRecvSimple) {
       EXPECT_EQ(0, local_shard_id);
       recv_triggered = true;
     });
-  std::this_thread::sleep_for(500ms);
   BinStream* payload = new BinStream();
   *payload << 3.14;
   sender.Send({0, 0}, 0, payload);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(100ms);
+  EXPECT_TRUE(recv_triggered);
+}
+
+TEST_F(TestMailbox, DelayRecvHandler) {
+  using namespace std::chrono_literals;
+
+  MailboxAddressBook addr_book;
+  addr_book.AddProcess(0, "inproc://mailbox-recver");
+  MailboxSender sender(addr_book, &zmq_context_);
+  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_);
+  MailboxEventLoop event_loop(&zmq_context_);
+  event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  Mailbox mailbox(&zmq_context_);
+  bool recv_triggered = false;
+  BinStream* payload = new BinStream();
+  *payload << 3.14;
+  sender.Send({0, 0}, 0, payload);
+  // Shouldn't crash even if recv handler is not available
+  std::this_thread::sleep_for(100ms);
+
+  mailbox.OnRecv(0, [&](int local_shard_id, BinStream* payload){
+      double data;
+      *payload >> data;
+      EXPECT_EQ(3.14, data);
+      EXPECT_EQ(0, local_shard_id);
+      recv_triggered = true;
+    });
+  std::this_thread::sleep_for(100ms);
   EXPECT_TRUE(recv_triggered);
 }
 
