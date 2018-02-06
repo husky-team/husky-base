@@ -15,13 +15,14 @@
 #pragma once
 
 #include <functional>
-#include <map>
 #include <thread>
+#include <unordered_map>
 
 #include "zmq.hpp"
 
 #include "husky-base/bin_stream.h"
 #include "husky-base/mailbox_adress_book.h"
+#include "husky-base/mailbox_types.h"
 #include "husky-base/shard.h"
 
 namespace husky {
@@ -29,26 +30,18 @@ namespace base {
 
 class MailboxEventLoop {
  public:
-  typedef std::function<void(int local_shard_id, int progress, BinStream*)> RecvAvailableHandlerType;
-  typedef std::function<void(int progress)> RecvCompleteHandlerType;
-  typedef std::function<void(Shard shard, int channel_id, int progress, BinStream*)> SendHandlerType;
-  typedef std::function<void(int channel_id, int progress)> SendCompleteHandlerType;
-
   explicit MailboxEventLoop(zmq::context_t* zmq_context);
   ~MailboxEventLoop();
 
   // There following two methods are not thread-safe, since we assume that they are set up at the very beginning. If
   // they need to be changed later, we need to provide thread-safe ways
-  void OnSend(SendHandlerType handler);
-  void OnSendComplete(SendCompleteHandlerType handler);
+  void OnSend(MailboxSendHandlerType handler);
 
  protected:
   std::unique_ptr<std::thread> thread_;
   zmq::context_t* zmq_context_;
-  std::map<int, RecvAvailableHandlerType> recv_available_handlers_;
-  std::map<int, RecvCompleteHandlerType> recv_complete_handlers_;
-  SendHandlerType send_handler_;
-  SendCompleteHandlerType send_complete_handler_;
+  std::unordered_map<int, MailboxRecvHandlerType> recv_handlers_;
+  MailboxSendHandlerType send_handler_;
 };
 
 }  // namespace base
