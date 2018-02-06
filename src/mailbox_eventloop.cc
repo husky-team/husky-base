@@ -31,7 +31,12 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
         int local_shard_id = zmq_recv_int32(&event_loop_socket);
         int channel_id = zmq_recv_int32(&event_loop_socket);
         BinStream* bin_stream = reinterpret_cast<BinStream*>(zmq_recv_int64(&event_loop_socket));
-        recv_handlers_.at(channel_id)(local_shard_id, bin_stream);
+
+        if (recv_handlers_.find(channel_id) != recv_handlers_.end()) {
+          recv_handlers_.at(channel_id)(local_shard_id, bin_stream);
+        } else {
+          cached_comm_[channel_id].push_back({local_shard_id, bin_stream});
+        }
         break;
       }
       case MailboxEventType::SendComm: {
@@ -46,6 +51,15 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
         int channel_id = zmq_recv_int32(&event_loop_socket);
         MailboxRecvHandlerType* handler = reinterpret_cast<MailboxRecvHandlerType*>(zmq_recv_int64(&event_loop_socket));
         recv_handlers_[channel_id] = *handler;
+
+        // Process cached communication
+        if (cached_comm_.find(channel_id) != cached_comm_.end()) {
+          for (auto& local_shard_id_payload : cached_comm_.at(channel_id)) {
+            int local_shard_id = local_shard_id_payload.first;
+            BinStream* payload = local_shard_id_payload.second;
+            recv_handlers_.at(channel_id)(local_shard_id, payload);
+          }
+        }
         break;
       }
       case MailboxEventType::Shutdown: {
