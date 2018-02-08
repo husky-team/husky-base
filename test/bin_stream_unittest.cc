@@ -309,5 +309,37 @@ TEST_F(TestBinStream, WithInheritance) {
   EXPECT_EQ(a, b);
 }
 
+// A non-copiable class
+class NonCopiable {
+ public:
+  NonCopiable() = default;
+  NonCopiable(NonCopiable&&) = default;
+  NonCopiable(const NonCopiable&) = delete;
+  NonCopiable& operator=(const NonCopiable&) = delete;
+};
+
+struct NonCopiableHash {
+  size_t operator() (const NonCopiable&) const { return 0; }
+};
+
+bool operator<(const NonCopiable&, const NonCopiable&) { return true; }
+bool operator==(const NonCopiable&, const NonCopiable&) { return true; }
+BinStream& operator<<(BinStream& bin_stream, const NonCopiable& n) { return bin_stream; }
+BinStream& operator>>(BinStream& bin_stream, NonCopiable& n) { return bin_stream; }
+
+// Expect this case to compile
+TEST_F(TestBinStream, AvoidCopyInDeserialization) {
+
+  std::set<NonCopiable> set;
+  std::map<int, NonCopiable> map;
+  std::unordered_set<NonCopiable, NonCopiableHash> unordered_set;
+  std::unordered_map<int, NonCopiable> unordered_map;
+  std::vector<NonCopiable> vector;
+  BinStream bin_stream;
+
+  bin_stream << set << map << unordered_set << unordered_map << vector;
+  bin_stream >> set >> map >> unordered_set >> unordered_map >> vector;
+}
+
 }  // namespace
 }  // namespace husky
