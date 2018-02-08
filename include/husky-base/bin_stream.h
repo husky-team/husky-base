@@ -143,9 +143,12 @@ BinStream& operator>>(BinStream& stream, std::vector<OutputT>& v) {
   size_t len;
   stream >> len;
   v.clear();
-  v.resize(len);
-  for (int i = 0; i < v.size(); ++i)
-    stream >> v[i];
+  v.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    OutputT elem;
+    stream >> elem;
+    v.push_back(std::move(elem));
+  }
   return stream;
 }
 
@@ -166,7 +169,7 @@ BinStream& operator>>(BinStream& stream, std::map<K, V>& map) {
   for (int i = 0; i < len; i++) {
     std::pair<K, V> elem;
     stream >> elem;
-    map.insert(elem);
+    map.insert(std::move(elem));
   }
   return stream;
 }
@@ -188,13 +191,13 @@ BinStream& operator>>(BinStream& stream, std::set<K>& set) {
   for (int i = 0; i < len; ++i) {
     K elem;
     stream >> elem;
-    set.insert(elem);
+    set.insert(std::move(elem));
   }
   return stream;
 }
 
-template <typename K>
-BinStream& operator<<(BinStream& stream, const std::unordered_set<K>& unordered_set) {
+template <typename K, typename HashT>
+BinStream& operator<<(BinStream& stream, const std::unordered_set<K, HashT>& unordered_set) {
   size_t len = unordered_set.size();
   stream << len;
   for (auto& elem : unordered_set)
@@ -202,21 +205,21 @@ BinStream& operator<<(BinStream& stream, const std::unordered_set<K>& unordered_
   return stream;
 }
 
-template <typename K>
-BinStream& operator>>(BinStream& stream, std::unordered_set<K>& unordered_set) {
+template <typename K, typename HashT>
+BinStream& operator>>(BinStream& stream, std::unordered_set<K, HashT>& unordered_set) {
   size_t len;
   stream >> len;
   unordered_set.clear();
   for (int i = 0; i < len; ++i) {
     K elem;
     stream >> elem;
-    unordered_set.insert(elem);
+    unordered_set.insert(std::move(elem));
   }
   return stream;
 }
 
-template <typename K, typename V>
-BinStream& operator<<(BinStream& stream, const std::unordered_map<K, V>& unordered_map) {
+template <typename K, typename V, typename HashT>
+BinStream& operator<<(BinStream& stream, const std::unordered_map<K, V, HashT>& unordered_map) {
   size_t len = unordered_map.size();
   stream << len;
   for (auto& elem : unordered_map)
@@ -224,15 +227,15 @@ BinStream& operator<<(BinStream& stream, const std::unordered_map<K, V>& unorder
   return stream;
 }
 
-template <typename K, typename V>
-BinStream& operator>>(BinStream& stream, std::unordered_map<K, V>& unordered_map) {
+template <typename K, typename V, typename HashT>
+BinStream& operator>>(BinStream& stream, std::unordered_map<K, V, HashT>& unordered_map) {
   size_t len;
   stream >> len;
   unordered_map.clear();
   for (int i = 0; i < len; i++) {
     std::pair<K, V> elem;
     stream >> elem;
-    unordered_map.insert(elem);
+    unordered_map.insert(std::move(elem));
   }
   return stream;
 }
