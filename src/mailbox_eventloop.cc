@@ -44,7 +44,7 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
         int local_shard_id = zmq_recv_int32(&event_loop_socket);
         int channel_id = zmq_recv_int32(&event_loop_socket);
         BinStream* payload = reinterpret_cast<BinStream*>(zmq_recv_int64(&event_loop_socket));
-        send_handler_({process_id, local_shard_id}, channel_id, payload);
+        send_handler_({local_shard_id, process_id}, channel_id, payload);
         break;
       }
       case MailboxEventType::SetRecvHandler: {
