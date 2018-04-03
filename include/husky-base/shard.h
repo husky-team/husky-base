@@ -21,8 +21,15 @@ class Shard {
  public:
   Shard(int local_shard_id, int process_id) : local_shard_id_(local_shard_id), process_id_(process_id) {}
 
-  int GetLocalShardId() { return local_shard_id_; }
-  int GetProcessId() { return process_id_; }
+  int GetLocalShardId() const { return local_shard_id_; }
+  int GetProcessId() const { return process_id_; }
+
+  bool operator<(const Shard& shard) const {
+    if (process_id_ < shard.GetProcessId() ||
+        (process_id_ == shard.GetProcessId() && local_shard_id_ << shard.GetLocalShardId()))
+      return true;
+    return false;
+  }
 
  protected:
   int local_shard_id_;
