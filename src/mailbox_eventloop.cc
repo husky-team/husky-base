@@ -34,6 +34,7 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
 
         if (recv_handlers_.find(channel_id) != recv_handlers_.end()) {
           recv_handlers_.at(channel_id)(local_shard_id, bin_stream);
+          delete (bin_stream);
         } else {
           cached_comm_[channel_id].push_back({local_shard_id, bin_stream});
         }
@@ -58,6 +59,7 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
             int local_shard_id = local_shard_id_payload.first;
             BinStream* payload = local_shard_id_payload.second;
             recv_handlers_.at(channel_id)(local_shard_id, payload);
+            delete (payload);
           }
         }
         break;
