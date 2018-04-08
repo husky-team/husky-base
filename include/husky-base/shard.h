@@ -26,7 +26,7 @@ class Shard {
 
   bool operator<(const Shard& shard) const {
     if (process_id_ < shard.GetProcessId() ||
-        (process_id_ == shard.GetProcessId() && local_shard_id_ << shard.GetLocalShardId()))
+        (process_id_ == shard.GetProcessId() && local_shard_id_ < shard.GetLocalShardId()))
       return true;
     return false;
   }
