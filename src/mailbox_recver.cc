@@ -14,6 +14,7 @@
 
 #include "husky-base/mailbox_recver.h"
 
+#include <sys/socket.h>
 #include <string>
 
 #include "husky-base/mailbox_types.h"
@@ -26,6 +27,11 @@ MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& co
     : bind_addr_(bind_addr), connect_addr_(connect_addr), zmq_context_(zmq_context) {
   thread_.reset(new std::thread([=]() {
     zmq::socket_t recv_socket(*zmq_context_, zmq::socket_type::pull);
+    int sock_fd;
+    size_t size = sizeof(sock_fd);
+    int flag = 1;
+    recv_socket.getsockopt(ZMQ_FD, &sock_fd, &size);
+    setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
     recv_socket.bind(bind_addr_);
 
     zmq::socket_t event_socket(*zmq_context_, zmq::socket_type::push);
