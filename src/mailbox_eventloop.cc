@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+
 #include "husky-base/mailbox_eventloop.h"
 
 #include "husky-base/zmq_helpers.h"
@@ -19,19 +21,17 @@
 namespace husky {
 namespace base {
 
-MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(zmq_context) {
+MailboxEventLoop::MailboxEventLoop(MailboxEventQueuePtr queue) : queue_(queue) {
   thread_.reset(new std::thread([=]() {
-    zmq::socket_t event_loop_socket(*zmq_context_, zmq::socket_type::pull);
-    event_loop_socket.bind("inproc://mailbox-event-loop");
     bool shutdown = false;
     while (!shutdown) {
-      int type = zmq_recv_int32(&event_loop_socket);
-      switch (type) {
+      auto event_base = queue_->WaitAndPop();
+      switch (event_base->GetType()) {
       case MailboxEventType::RecvComm: {
-        int local_shard_id = zmq_recv_int32(&event_loop_socket);
-        int channel_id = zmq_recv_int32(&event_loop_socket);
-        BinStream* bin_stream = reinterpret_cast<BinStream*>(zmq_recv_int64(&event_loop_socket));
-
+        auto event = std::static_pointer_cast<MailboxEventRecvComm>(event_base);
+        int local_shard_id = event->GetLocalShardId();
+        int channel_id = event->GetChannelId();
+        BinStream* bin_stream = event->GetBinStream();
         if (recv_handlers_.find(channel_id) != recv_handlers_.end()) {
           recv_handlers_.at(channel_id)(local_shard_id, bin_stream);
           delete (bin_stream);
@@ -40,17 +40,10 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
         }
         break;
       }
-      case MailboxEventType::SendComm: {
-        int process_id = zmq_recv_int32(&event_loop_socket);
-        int local_shard_id = zmq_recv_int32(&event_loop_socket);
-        int channel_id = zmq_recv_int32(&event_loop_socket);
-        BinStream* payload = reinterpret_cast<BinStream*>(zmq_recv_int64(&event_loop_socket));
-        send_handler_({local_shard_id, process_id}, channel_id, payload);
-        break;
-      }
       case MailboxEventType::SetRecvHandler: {
-        int channel_id = zmq_recv_int32(&event_loop_socket);
-        MailboxRecvHandlerType* handler = reinterpret_cast<MailboxRecvHandlerType*>(zmq_recv_int64(&event_loop_socket));
+        auto event = std::static_pointer_cast<MailboxEventSetRecvHandler>(event_base);
+        int channel_id = event->GetChannelId();
+        MailboxRecvHandlerType* handler = event->GetHandler();
         recv_handlers_[channel_id] = *handler;
 
         // Process cached communication
@@ -64,6 +57,15 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
         }
         break;
       }
+      case MailboxEventType::SendComm: {
+        auto event = std::static_pointer_cast<MailboxEventSendComm>(event_base);
+        int process_id = event->GetProcessId();
+        int local_shard_id = event->GetLocalShardId();
+        int channel_id = event->GetChannelId();
+        BinStream* payload = event->GetPayload();
+        send_handler_({local_shard_id, process_id}, channel_id, payload);
+        break;
+      }
       case MailboxEventType::Shutdown: {
         shutdown = true;
         break;
@@ -74,9 +76,8 @@ MailboxEventLoop::MailboxEventLoop(zmq::context_t* zmq_context) : zmq_context_(z
 }
 
 MailboxEventLoop::~MailboxEventLoop() {
-  zmq::socket_t shutdown_sock(*zmq_context_, zmq::socket_type::push);
-  shutdown_sock.connect("inproc://mailbox-event-loop");
-  zmq_send_int32(&shutdown_sock, MailboxEventType::Shutdown);
+  auto event = std::make_shared<MailboxEventShutdown>();
+  queue_->Push(event);
   thread_->join();
 }
 

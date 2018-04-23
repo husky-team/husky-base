@@ -27,15 +27,16 @@
 #include "husky-base/bin_stream.h"
 #include "husky-base/mailbox_types.h"
 #include "husky-base/shard.h"
+#include "husky-base/threadsafe_priority_queue.h"
 
 namespace husky {
 namespace base {
 
-// Endpoint for sending and recieving communication. This class is not thread-safe. A Mailbox instance is supposed to be
-// used by the same thread.
+// Endpoint for sending and recieving communication. This class is thread-safe. A Mailbox instance doesn't need to be
+// used only by the same thread.
 class Mailbox {
  public:
-  explicit Mailbox(zmq::context_t* zmq_context);
+  explicit Mailbox(MailboxEventQueuePtr queue);
   virtual ~Mailbox();
 
   /// \brief Send outgoing communication to a specific thread.
@@ -50,7 +51,8 @@ class Mailbox {
   ///        be increasing.
   /// @param payload The actual communication in the form of BinStream. This method takes over the ownership of the
   /// payload.
-  void Send(Shard shard, int channel_id, BinStream* payload);
+  /// @param priority Priority handle in EventLoop, defalut -1 are system events
+  void Send(Shard shard, int channel_id, BinStream* payload, int priority = -1);
 
   /// \brief Set the handler for new incoming communication
   ///
@@ -61,8 +63,7 @@ class Mailbox {
   void OnRecv(int channel_id, MailboxRecvHandlerType handler);
 
  protected:
-  zmq::context_t* zmq_context_;
-  std::unique_ptr<zmq::socket_t> socket_;
+  MailboxEventQueuePtr queue_;
 };
 
 }  // namespace base

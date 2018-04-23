@@ -18,25 +18,19 @@
 namespace husky {
 namespace base {
 
-Mailbox::Mailbox(zmq::context_t* zmq_context) : zmq_context_(zmq_context) {
-  socket_.reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
-  socket_->connect("inproc://mailbox-event-loop");
-}
+Mailbox::Mailbox(MailboxEventQueuePtr queue) : queue_(queue) {}
 
-Mailbox::~Mailbox() { socket_.reset(nullptr); }
+Mailbox::~Mailbox() {}
 
-void Mailbox::Send(Shard shard, int channel_id, BinStream* payload) {
-  zmq_sendmore_int32(socket_.get(), MailboxEventType::SendComm);
-  zmq_sendmore_int32(socket_.get(), shard.GetProcessId());
-  zmq_sendmore_int32(socket_.get(), shard.GetLocalShardId());
-  zmq_sendmore_int32(socket_.get(), channel_id);
-  zmq_send_int64(socket_.get(), reinterpret_cast<uint64_t>(payload));
+void Mailbox::Send(Shard shard, int channel_id, BinStream* payload, int priority) {
+  auto event = std::make_shared<MailboxEventSendComm>(shard.GetProcessId(), shard.GetLocalShardId(), channel_id,
+                                                      payload, priority);
+  queue_->Push(event);
 }
 
 void Mailbox::OnRecv(int channel_id, MailboxRecvHandlerType handler) {
-  zmq_sendmore_int32(socket_.get(), MailboxEventType::SetRecvHandler);
-  zmq_sendmore_int32(socket_.get(), channel_id);
-  zmq_send_int64(socket_.get(), reinterpret_cast<uint64_t>(new MailboxRecvHandlerType(handler)));
+  auto event = std::make_shared<MailboxEventSetRecvHandler>(channel_id, new MailboxRecvHandlerType(handler));
+  queue_->Push(event);
 }
 
 }  // namespace base

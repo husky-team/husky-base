@@ -20,6 +20,7 @@
 #include "zmq.hpp"
 
 #include "husky-base/bin_stream.h"
+#include "husky-base/mailbox_types.h"
 #include "husky-base/shard.h"
 
 namespace husky {
@@ -27,12 +28,14 @@ namespace base {
 
 class MailboxRecver {
  public:
-  MailboxRecver(const std::string& bind_addr, const std::string& connect_addr, zmq::context_t* zmq_context);
+  MailboxRecver(const std::string& bind_addr, const std::string& connect_addr, zmq::context_t* zmq_context,
+                MailboxEventQueuePtr queue);
   ~MailboxRecver();
 
  protected:
   std::unique_ptr<std::thread> thread_;
   zmq::context_t* zmq_context_;
+  MailboxEventQueuePtr queue_;
   std::string bind_addr_;
   std::string connect_addr_;
 };
