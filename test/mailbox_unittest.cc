@@ -24,6 +24,8 @@
 #include "husky-base/mailbox_eventloop.h"
 #include "husky-base/mailbox_sender.h"
 #include "husky-base/mailbox_recver.h"
+#include "husky-base/threadsafe_priority_queue.h"
+#include "husky-base/mailbox_types.h"
 
 // TODO This contains unittests for different components of Mailbox. They should be separated later.
 
@@ -33,25 +35,28 @@ namespace {
 
 class TestMailbox : public testing::Test {
  public:
-  TestMailbox() {}
+  TestMailbox() {
+    queue_ = std::make_shared<MailboxEventQueue>();
+  }
   ~TestMailbox() {}
 
  protected:
   void SetUp() {}
   void TearDown() {}
+  MailboxEventQueuePtr queue_;
   zmq::context_t zmq_context_;
 };
 
 TEST_F(TestMailbox, EventLoopInitDestroy) {
-  MailboxEventLoop event_loop(&zmq_context_);
+  MailboxEventLoop event_loop(queue_);
 }
 
 TEST_F(TestMailbox, SendTriggerEventLoop) {
   using namespace std::chrono_literals;
 
   zmq::context_t zmq_context;
-  Mailbox mailbox(&zmq_context_);
-  MailboxEventLoop event_loop(&zmq_context_);
+  Mailbox mailbox(queue_);
+  MailboxEventLoop event_loop(queue_);
   bool send_triggered = false;
   event_loop.OnSend([&](Shard, int channel_id, BinStream*){
       send_triggered = true;
@@ -67,7 +72,7 @@ TEST_F(TestMailbox, SenderInitDestroy) {
 }
 
 TEST_F(TestMailbox, RecverInitDestroy) {
-  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_);
+  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_, queue_);
 }
 
 TEST_F(TestMailbox, SendRecvSimple) {
@@ -76,10 +81,10 @@ TEST_F(TestMailbox, SendRecvSimple) {
   MailboxAddressBook addr_book;
   addr_book.AddProcess(0, "inproc://mailbox-recver");
   MailboxSender sender(addr_book, &zmq_context_);
-  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_);
-  MailboxEventLoop event_loop(&zmq_context_);
+  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_, queue_);
+  MailboxEventLoop event_loop(queue_);
   event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  Mailbox mailbox(&zmq_context_);
+  Mailbox mailbox(queue_);
   bool recv_triggered = false;
   mailbox.OnRecv(0, [&](int local_shard_id, BinStream* payload){
       double data;
@@ -101,10 +106,10 @@ TEST_F(TestMailbox, DelayRecvHandler) {
   MailboxAddressBook addr_book;
   addr_book.AddProcess(0, "inproc://mailbox-recver");
   MailboxSender sender(addr_book, &zmq_context_);
-  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_);
-  MailboxEventLoop event_loop(&zmq_context_);
+  MailboxRecver recver("inproc://mailbox-recver", "inproc://mailbox-recver", &zmq_context_, queue_);
+  MailboxEventLoop event_loop(queue_);
   event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  Mailbox mailbox(&zmq_context_);
+  Mailbox mailbox(queue_);
   bool recv_triggered = false;
   BinStream* payload = new BinStream();
   *payload << 3.14;

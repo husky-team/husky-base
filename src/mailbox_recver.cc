@@ -23,8 +23,9 @@
 namespace husky {
 namespace base {
 
-MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& connect_addr, zmq::context_t* zmq_context)
-    : bind_addr_(bind_addr), connect_addr_(connect_addr), zmq_context_(zmq_context) {
+MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& connect_addr, zmq::context_t* zmq_context,
+                             MailboxEventQueuePtr queue)
+    : bind_addr_(bind_addr), connect_addr_(connect_addr), zmq_context_(zmq_context), queue_(queue) {
   thread_.reset(new std::thread([=]() {
     zmq::socket_t recv_socket(*zmq_context_, zmq::socket_type::pull);
     int sock_fd;
@@ -33,9 +34,6 @@ MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& co
     recv_socket.getsockopt(ZMQ_FD, &sock_fd, &size);
     setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
     recv_socket.bind(bind_addr_);
-
-    zmq::socket_t event_socket(*zmq_context_, zmq::socket_type::push);
-    event_socket.connect("inproc://mailbox-event-loop");
 
     bool shutdown = false;
     while (!shutdown) {
@@ -46,10 +44,8 @@ MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& co
         int local_shard_id = zmq_recv_int32(&recv_socket);
         int channel_id = zmq_recv_int32(&recv_socket);
         auto* bin_stream = new BinStream(std::move(zmq_recv_binstream(&recv_socket)));
-        zmq_sendmore_int32(&event_socket, MailboxEventType::RecvComm);
-        zmq_sendmore_int32(&event_socket, local_shard_id);
-        zmq_sendmore_int32(&event_socket, channel_id);
-        zmq_send_int64(&event_socket, reinterpret_cast<uint64_t>(bin_stream));
+        auto event = std::make_shared<MailboxEventRecvComm>(local_shard_id, channel_id, bin_stream);
+        queue_->Push(event);
         break;
       }
       case MailboxEventType::Shutdown: {

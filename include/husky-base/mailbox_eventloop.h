@@ -30,7 +30,7 @@ namespace base {
 
 class MailboxEventLoop {
  public:
-  explicit MailboxEventLoop(zmq::context_t* zmq_context);
+  explicit MailboxEventLoop(MailboxEventQueuePtr queue);
   ~MailboxEventLoop();
 
   // There following two methods are not thread-safe, since we assume that they are set up at the very beginning. If
@@ -39,7 +39,7 @@ class MailboxEventLoop {
 
  protected:
   std::unique_ptr<std::thread> thread_;
-  zmq::context_t* zmq_context_;
+  MailboxEventQueuePtr queue_;
   std::unordered_map<int, MailboxRecvHandlerType> recv_handlers_;
   std::unordered_map<int, std::vector<std::pair<int, BinStream*>>> cached_comm_;
   MailboxSendHandlerType send_handler_;
