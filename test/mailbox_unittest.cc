@@ -86,7 +86,7 @@ TEST_F(TestMailbox, SendRecvSimple) {
   event_loop.OnSend(std::bind(&MailboxSender::Send, &sender, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   Mailbox mailbox(queue_);
   bool recv_triggered = false;
-  mailbox.OnRecv(0, [&](int local_shard_id, BinStream* payload){
+  mailbox.OnRecv(0, [&](int local_shard_id, std::shared_ptr<BinStream> payload){
       double data;
       *payload >> data;
       EXPECT_EQ(3.14, data);
@@ -117,7 +117,7 @@ TEST_F(TestMailbox, DelayRecvHandler) {
   // Shouldn't crash even if recv handler is not available
   std::this_thread::sleep_for(100ms);
 
-  mailbox.OnRecv(0, [&](int local_shard_id, BinStream* payload){
+  mailbox.OnRecv(0, [&](int local_shard_id, std::shared_ptr<BinStream> payload){
       double data;
       *payload >> data;
       EXPECT_EQ(3.14, data);

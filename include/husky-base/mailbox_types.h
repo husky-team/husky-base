@@ -28,7 +28,7 @@ enum MailboxEventType : int32_t { RecvComm = 1, SetRecvHandler = 2, SendComm = 3
 
 // Typedefs for send/recv handler
 typedef std::function<void(Shard shard, int channel_id, BinStream* payload)> MailboxSendHandlerType;
-typedef std::function<void(int local_shard_id, BinStream* payload)> MailboxRecvHandlerType;
+typedef std::function<void(int local_shard_id, std::shared_ptr<BinStream> payload)> MailboxRecvHandlerType;
 
 class MailboxEventBase {
  public:
@@ -45,19 +45,19 @@ class MailboxEventBase {
 class MailboxEventRecvComm : public MailboxEventBase {
  public:
   // TODO(czk) we should not let the mailbox event loop deserialize data in channel?
-  MailboxEventRecvComm(int local_shard_id, int channel_id, BinStream* bin_stream)
+  MailboxEventRecvComm(int local_shard_id, int channel_id, std::shared_ptr<BinStream> bin_stream)
       : MailboxEventBase(MailboxEventType::RecvComm, -1),
         local_shard_id_(local_shard_id),
         channel_id_(channel_id),
         bin_stream_(bin_stream) {}
   int GetLocalShardId() { return local_shard_id_; }
   int GetChannelId() { return channel_id_; }
-  BinStream* GetBinStream() { return bin_stream_; }
+  std::shared_ptr<BinStream> GetBinStream() { return bin_stream_; }
 
  private:
   int local_shard_id_;
   int channel_id_;
-  BinStream* bin_stream_;
+  std::shared_ptr<BinStream> bin_stream_;
 };
 
 class MailboxEventSetRecvHandler : public MailboxEventBase {
@@ -74,7 +74,8 @@ class MailboxEventSetRecvHandler : public MailboxEventBase {
 
 class MailboxEventSendComm : public MailboxEventBase {
  public:
-  MailboxEventSendComm(int process_id, int local_shard_id, int channel_id, BinStream* payload, int priority)
+  MailboxEventSendComm(int process_id, int local_shard_id, int channel_id, std::shared_ptr<BinStream> payload,
+                       int priority)
       : MailboxEventBase(MailboxEventType::SendComm, priority),
         process_id_(process_id),
         local_shard_id_(local_shard_id),
@@ -84,13 +85,13 @@ class MailboxEventSendComm : public MailboxEventBase {
   int GetProcessId() { return process_id_; }
   int GetLocalShardId() { return local_shard_id_; }
   int GetChannelId() { return channel_id_; }
-  BinStream* GetPayload() { return payload_; }
+  std::shared_ptr<BinStream> GetPayload() { return payload_; }
 
  private:
   int process_id_;
   int local_shard_id_;
   int channel_id_;
-  BinStream* payload_;
+  std::shared_ptr<BinStream> payload_;
 };
 
 class MailboxEventShutdown : public MailboxEventBase {

@@ -36,7 +36,6 @@ void MailboxSender::Send(Shard shard, int channel_id, BinStream* payload) {
   zmq_sendmore_int32(sender, shard.GetLocalShardId());
   zmq_sendmore_int32(sender, channel_id);
   zmq_send_binstream(sender, *payload);
-  delete payload;
 }
 
 }  // namespace base

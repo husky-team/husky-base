@@ -41,7 +41,7 @@ class MailboxEventLoop {
   std::unique_ptr<std::thread> thread_;
   MailboxEventQueuePtr queue_;
   std::unordered_map<int, MailboxRecvHandlerType> recv_handlers_;
-  std::unordered_map<int, std::vector<std::pair<int, BinStream*>>> cached_comm_;
+  std::unordered_map<int, std::vector<std::pair<int, std::shared_ptr<BinStream>>>> cached_comm_;
   MailboxSendHandlerType send_handler_;
 };
 

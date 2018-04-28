@@ -24,7 +24,7 @@ Mailbox::~Mailbox() {}
 
 void Mailbox::Send(Shard shard, int channel_id, BinStream* payload, int priority) {
   auto event = std::make_shared<MailboxEventSendComm>(shard.GetProcessId(), shard.GetLocalShardId(), channel_id,
-                                                      payload, priority);
+                                                      std::shared_ptr<BinStream>(payload), priority);
   queue_->Push(event);
 }
 

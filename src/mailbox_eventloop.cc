@@ -31,10 +31,9 @@ MailboxEventLoop::MailboxEventLoop(MailboxEventQueuePtr queue) : queue_(queue) {
         auto event = std::static_pointer_cast<MailboxEventRecvComm>(event_base);
         int local_shard_id = event->GetLocalShardId();
         int channel_id = event->GetChannelId();
-        BinStream* bin_stream = event->GetBinStream();
+        std::shared_ptr<BinStream> bin_stream = event->GetBinStream();
         if (recv_handlers_.find(channel_id) != recv_handlers_.end()) {
           recv_handlers_.at(channel_id)(local_shard_id, bin_stream);
-          delete (bin_stream);
         } else {
           cached_comm_[channel_id].push_back({local_shard_id, bin_stream});
         }
@@ -50,9 +49,8 @@ MailboxEventLoop::MailboxEventLoop(MailboxEventQueuePtr queue) : queue_(queue) {
         if (cached_comm_.find(channel_id) != cached_comm_.end()) {
           for (auto& local_shard_id_payload : cached_comm_.at(channel_id)) {
             int local_shard_id = local_shard_id_payload.first;
-            BinStream* payload = local_shard_id_payload.second;
+            std::shared_ptr<BinStream> payload = local_shard_id_payload.second;
             recv_handlers_.at(channel_id)(local_shard_id, payload);
-            delete (payload);
           }
         }
         break;
@@ -62,8 +60,8 @@ MailboxEventLoop::MailboxEventLoop(MailboxEventQueuePtr queue) : queue_(queue) {
         int process_id = event->GetProcessId();
         int local_shard_id = event->GetLocalShardId();
         int channel_id = event->GetChannelId();
-        BinStream* payload = event->GetPayload();
-        send_handler_({local_shard_id, process_id}, channel_id, payload);
+        std::shared_ptr<BinStream> payload = event->GetPayload();
+        send_handler_({local_shard_id, process_id}, channel_id, payload.get());
         break;
       }
       case MailboxEventType::Shutdown: {

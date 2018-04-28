@@ -43,7 +43,7 @@ MailboxRecver::MailboxRecver(const std::string& bind_addr, const std::string& co
         // Relay the event to the event loop
         int local_shard_id = zmq_recv_int32(&recv_socket);
         int channel_id = zmq_recv_int32(&recv_socket);
-        auto* bin_stream = new BinStream(std::move(zmq_recv_binstream(&recv_socket)));
+        auto bin_stream = std::shared_ptr<BinStream>(new BinStream(std::move(zmq_recv_binstream(&recv_socket))));
         auto event = std::make_shared<MailboxEventRecvComm>(local_shard_id, channel_id, bin_stream);
         queue_->Push(event);
         break;
