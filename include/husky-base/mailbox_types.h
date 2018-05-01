@@ -36,6 +36,7 @@ class MailboxEventBase {
 
   MailboxEventType GetType() { return type_; }
   int GetPriority() { return priority_; }
+  virtual int GetSize() { return 0; }
 
  private:
   MailboxEventType type_;
@@ -85,6 +86,7 @@ class MailboxEventSendComm : public MailboxEventBase {
   int GetProcessId() { return process_id_; }
   int GetLocalShardId() { return local_shard_id_; }
   int GetChannelId() { return channel_id_; }
+  int GetSize() override { return payload_->size(); }
   std::shared_ptr<BinStream> GetPayload() { return payload_; }
 
  private:

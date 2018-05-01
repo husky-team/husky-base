@@ -14,6 +14,7 @@
 
 #include "husky-base/mailbox_sender.h"
 
+#include <iostream>
 #include <string>
 
 #include "husky-base/mailbox_types.h"
@@ -25,8 +26,10 @@ namespace base {
 MailboxSender::MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t* zmq_context)
     : zmq_context_(zmq_context), addr_book_(addr_book) {
   addr_book_.ForEach([=](int process_id, const std::string& addr) {
+    std::cerr << "connect to " << addr << std::endl;
     senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
     senders_[process_id]->connect(addr);
+    std::cerr << "tati connect to " << addr << std::endl;
   });
 }
 
