@@ -29,7 +29,7 @@ void Mailbox::Send(Shard shard, int channel_id, BinStream* payload, int priority
 }
 
 void Mailbox::OnRecv(int channel_id, MailboxRecvHandlerType handler) {
-  auto event = std::make_shared<MailboxEventSetRecvHandler>(channel_id, new MailboxRecvHandlerType(handler));
+  auto event = std::make_shared<MailboxEventSetRecvHandler>(channel_id, handler);
   queue_->Push(event);
 }
 
