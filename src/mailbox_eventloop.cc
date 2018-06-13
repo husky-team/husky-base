@@ -42,8 +42,8 @@ MailboxEventLoop::MailboxEventLoop(MailboxEventQueuePtr queue) : queue_(queue) {
       case MailboxEventType::SetRecvHandler: {
         auto event = std::static_pointer_cast<MailboxEventSetRecvHandler>(event_base);
         int channel_id = event->GetChannelId();
-        MailboxRecvHandlerType* handler = event->GetHandler();
-        recv_handlers_[channel_id] = *handler;
+        MailboxRecvHandlerType handler = event->GetHandler();
+        recv_handlers_[channel_id] = handler;
 
         // Process cached communication
         if (cached_comm_.find(channel_id) != cached_comm_.end()) {

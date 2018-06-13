@@ -62,14 +62,14 @@ class MailboxEventRecvComm : public MailboxEventBase {
 
 class MailboxEventSetRecvHandler : public MailboxEventBase {
  public:
-  MailboxEventSetRecvHandler(int channel_id, MailboxRecvHandlerType* handler)
+  MailboxEventSetRecvHandler(int channel_id, MailboxRecvHandlerType handler)
       : MailboxEventBase(MailboxEventType::SetRecvHandler, -1), channel_id_(channel_id), handler_(handler) {}
   int GetChannelId() { return channel_id_; }
-  MailboxRecvHandlerType* GetHandler() { return handler_; }
+  MailboxRecvHandlerType GetHandler() { return handler_; }
 
  private:
   int channel_id_;
-  MailboxRecvHandlerType* handler_;
+  MailboxRecvHandlerType handler_;
 };
 
 class MailboxEventSendComm : public MailboxEventBase {
