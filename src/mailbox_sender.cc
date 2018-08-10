@@ -22,12 +22,25 @@
 namespace husky {
 namespace base {
 
+MailboxSender::MailboxSender(zmq::context_t* zmq_context) : zmq_context_(zmq_context) {}
+
 MailboxSender::MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t* zmq_context)
     : zmq_context_(zmq_context), addr_book_(addr_book) {
   addr_book_.ForEach([=](int process_id, const std::string& addr) {
     senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
     senders_[process_id]->connect(addr);
   });
+}
+
+void MailboxSender::AddNeighbor(int process_id, const std::string& addr) {
+  addr_book_.AddProcess(process_id, addr);
+  senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
+  senders_[process_id]->connect(addr);
+}
+
+void MailboxSender::RemoveNeighbor(int process_id) {
+  addr_book_.RemoveProcess(process_id);
+  senders_.erase(process_id);
 }
 
 void MailboxSender::Send(Shard shard, int channel_id, BinStream* payload) {
