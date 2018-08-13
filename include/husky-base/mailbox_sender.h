@@ -28,13 +28,18 @@ namespace base {
 
 class MailboxSender {
  public:
+  MailboxSender(zmq::context_t* zmq_context);
+  // TODO(tatiana): deprecate?
   MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t* zmq_context);
 
   // This takes over the ownership of the payload
   void Send(Shard shard, int channel_id, BinStream* payload);
 
+  void AddNeighbor(int process_id, const std::string& addr);
+  void RemoveNeighbor(int process_id);
+
  protected:
-  MailboxAddressBook addr_book_;
+  MailboxAddressBook addr_book_;  // TODO(tatiana): why keeping address book in sender?
   zmq::context_t* zmq_context_;
   std::unordered_map<int, std::shared_ptr<zmq::socket_t>> senders_;
 };
