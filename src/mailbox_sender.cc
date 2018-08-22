@@ -22,15 +22,38 @@
 namespace husky {
 namespace base {
 
+MailboxSender::MailboxSender(zmq::context_t* zmq_context) : zmq_context_(zmq_context) {}
+
 MailboxSender::MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t* zmq_context)
     : zmq_context_(zmq_context), addr_book_(addr_book) {
   addr_book_.ForEach([=](int process_id, const std::string& addr) {
-    senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
-    senders_[process_id]->connect(addr);
+    AddNeighborSender(process_id, addr);
   });
 }
 
+void MailboxSender::AddNeighborAddr(int process_id, const std::string& addr) {
+  addr_book_.AddProcess(process_id, addr);
+}
+
+void MailboxSender::AddNeighborSender(int process_id, const std::string& addr) {
+  mu_.lock();
+  senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
+  senders_[process_id]->connect(addr);
+  mu_.unlock();
+  cond_.notify_all();
+}
+
+void MailboxSender::RemoveNeighbor(int process_id) {
+  mu_.lock();
+  addr_book_.RemoveProcess(process_id);
+  senders_.erase(process_id);
+  mu_.unlock();
+  cond_.notify_all();
+}
+
 void MailboxSender::Send(Shard shard, int channel_id, BinStream* payload) {
+  std::unique_lock<std::mutex> lk(mu_);
+  cond_.wait(lk, [this, &shard]() { return senders_.find(shard.GetProcessId()) != senders_.end(); });
   auto* sender = senders_.at(shard.GetProcessId()).get();
   zmq_sendmore_int32(sender, MailboxEventType::RecvComm);
   zmq_sendmore_int32(sender, shard.GetLocalShardId());

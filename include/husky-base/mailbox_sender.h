@@ -16,6 +16,8 @@
 
 #include <memory>
 #include <unordered_map>
+#include <mutex>
+#include <condition_variable>
 
 #include "zmq.hpp"
 
@@ -28,12 +30,19 @@ namespace base {
 
 class MailboxSender {
  public:
+  MailboxSender(zmq::context_t* zmq_context);
   MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t* zmq_context);
 
   // This takes over the ownership of the payload
   void Send(Shard shard, int channel_id, BinStream* payload);
 
+  void AddNeighborAddr(int process_id, const std::string& addr);
+  void AddNeighborSender(int process_id, const std::string& addr);
+  void RemoveNeighbor(int process_id);
+  
  protected:
+  std::mutex mu_;
+  std::condition_variable cond_;
   MailboxAddressBook addr_book_;
   zmq::context_t* zmq_context_;
   std::unordered_map<int, std::shared_ptr<zmq::socket_t>> senders_;
