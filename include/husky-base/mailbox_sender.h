@@ -14,7 +14,9 @@
 
 #pragma once
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
 #include "zmq.hpp"
@@ -35,10 +37,13 @@ class MailboxSender {
   // This takes over the ownership of the payload
   void Send(Shard shard, int channel_id, BinStream* payload);
 
-  void AddNeighbor(int process_id, const std::string& addr);
   void RemoveNeighbor(int process_id);
 
+  void AddNeighbor(int process_id, const std::string& addr);
+
  protected:
+  std::mutex mu_;
+  std::condition_variable cond_;
   MailboxAddressBook addr_book_;  // TODO(tatiana): why keeping address book in sender?
   zmq::context_t* zmq_context_;
   std::unordered_map<int, std::shared_ptr<zmq::socket_t>> senders_;

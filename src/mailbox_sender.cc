@@ -27,15 +27,16 @@ MailboxSender::MailboxSender(zmq::context_t* zmq_context) : zmq_context_(zmq_con
 MailboxSender::MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t* zmq_context)
     : zmq_context_(zmq_context), addr_book_(addr_book) {
   addr_book_.ForEach([=](int process_id, const std::string& addr) {
-    senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
-    senders_[process_id]->connect(addr);
+   senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
+   senders_[process_id]->connect(addr);
   });
 }
 
+
 void MailboxSender::AddNeighbor(int process_id, const std::string& addr) {
-  addr_book_.AddProcess(process_id, addr);
   senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
   senders_[process_id]->connect(addr);
+  addr_book_.AddProcess(process_id, addr);
 }
 
 void MailboxSender::RemoveNeighbor(int process_id) {
@@ -44,11 +45,11 @@ void MailboxSender::RemoveNeighbor(int process_id) {
 }
 
 void MailboxSender::Send(Shard shard, int channel_id, BinStream* payload) {
-  auto* sender = senders_.at(shard.GetProcessId()).get();
-  zmq_sendmore_int32(sender, MailboxEventType::RecvComm);
-  zmq_sendmore_int32(sender, shard.GetLocalShardId());
-  zmq_sendmore_int32(sender, channel_id);
-  zmq_send_binstream(sender, *payload);
+    auto* sender = senders_.at(shard.GetProcessId()).get();
+    zmq_sendmore_int32(sender, MailboxEventType::RecvComm);
+    zmq_sendmore_int32(sender, shard.GetLocalShardId());
+    zmq_sendmore_int32(sender, channel_id);
+    zmq_send_binstream(sender, *payload);
 }
 
 }  // namespace base

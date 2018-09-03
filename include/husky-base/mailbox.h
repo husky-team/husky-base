@@ -62,6 +62,10 @@ class Mailbox {
   /// @param handler The handler to use
   void OnRecv(int channel_id, MailboxRecvHandlerType handler);
 
+  void AddNeighbor(int process_id, const std::string& addr, int priority = -1);
+
+  void RemoveNeighbor(int process_id, int priority = -1);
+ 
  protected:
   MailboxEventQueuePtr queue_;
 };

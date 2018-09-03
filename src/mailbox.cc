@@ -28,6 +28,16 @@ void Mailbox::Send(Shard shard, int channel_id, BinStream* payload, int priority
   queue_->Push(event);
 }
 
+void Mailbox::RemoveNeighbor(int process_id, int priority) {
+  auto event = std::make_shared<MailboxEventRemoveNeighbor>(process_id, priority);
+  queue_->Push(event);
+}
+
+void Mailbox::AddNeighbor(int process_id, const std::string& addr, int priority) {
+  auto event = std::make_shared<MailboxEventAddNeighbor>(process_id, addr, priority);
+  queue_->Push(event);
+}
+
 void Mailbox::OnRecv(int channel_id, MailboxRecvHandlerType handler) {
   auto event = std::make_shared<MailboxEventSetRecvHandler>(channel_id, handler);
   queue_->Push(event);
