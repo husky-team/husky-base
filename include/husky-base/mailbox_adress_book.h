@@ -27,6 +27,7 @@ class MailboxAddressBook {
   void RemoveProcess(int process_id);
   std::string GetAddress(int process_id);
   void ForEach(std::function<void(int process, const std::string& addr)> handler);
+  void ClearProcess() { address_map_.clear(); }
 
  protected:
   std::map<int, std::string> address_map_;

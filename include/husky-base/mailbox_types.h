@@ -24,11 +24,20 @@ namespace husky {
 namespace base {
 
 // Mailbox event types
-enum MailboxEventType : int32_t { RecvComm = 1, SetRecvHandler = 2, SendComm = 3, Shutdown = 4 };
+enum MailboxEventType : int32_t {
+  RecvComm = 1,
+  SetRecvHandler = 2,
+  SendComm = 3,
+  Shutdown = 4,
+  RemoveNeighbor = 5,
+  AddNeighbor = 6
+};
 
 // Typedefs for send/recv handler
 typedef std::function<void(Shard shard, int channel_id, BinStream* payload)> MailboxSendHandlerType;
 typedef std::function<void(int local_shard_id, std::shared_ptr<BinStream> payload)> MailboxRecvHandlerType;
+typedef std::function<void(int process_id)> MailboxRemoveNeighborHandlerType;
+typedef std::function<void(int process_id, const std::string& addr)> MailboxAddNeighborHandlerType;
 
 class MailboxEventBase {
  public:
@@ -92,6 +101,29 @@ class MailboxEventSendComm : public MailboxEventBase {
   int local_shard_id_;
   int channel_id_;
   std::shared_ptr<BinStream> payload_;
+};
+
+class MailboxEventRemoveNeighbor : public MailboxEventBase {
+ public:
+  MailboxEventRemoveNeighbor(int process_id, int priority)
+      : MailboxEventBase(MailboxEventType::RemoveNeighbor, priority), process_id_(process_id) {}
+  int GetProcessId() { return process_id_; }
+
+ private:
+  int process_id_;
+};
+
+class MailboxEventAddNeighbor : public MailboxEventBase {
+ public:
+  MailboxEventAddNeighbor(int process_id, const std::string& addr, int priority)
+      : MailboxEventBase(MailboxEventType::AddNeighbor, priority), process_id_(process_id), addr_(addr) {}
+
+  int GetProcessId() { return process_id_; }
+  const auto& GetAddr() { return addr_; }
+
+ private:
+  int process_id_;
+  std::string addr_;
 };
 
 class MailboxEventShutdown : public MailboxEventBase {

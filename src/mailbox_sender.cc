@@ -33,9 +33,9 @@ MailboxSender::MailboxSender(const MailboxAddressBook& addr_book, zmq::context_t
 }
 
 void MailboxSender::AddNeighbor(int process_id, const std::string& addr) {
-  addr_book_.AddProcess(process_id, addr);
   senders_[process_id].reset(new zmq::socket_t(*zmq_context_, zmq::socket_type::push));
   senders_[process_id]->connect(addr);
+  addr_book_.AddProcess(process_id, addr);
 }
 
 void MailboxSender::RemoveNeighbor(int process_id) {

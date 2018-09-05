@@ -64,6 +64,19 @@ MailboxEventLoop::MailboxEventLoop(MailboxEventQueuePtr queue) : queue_(queue) {
         send_handler_({local_shard_id, process_id}, channel_id, payload.get());
         break;
       }
+      case MailboxEventType::AddNeighbor: {
+        auto event = std::static_pointer_cast<MailboxEventAddNeighbor>(event_base);
+        int process_id = event->GetProcessId();
+        std::string addr = event->GetAddr();
+        add_handler_(process_id, addr);
+        break;
+      }
+      case MailboxEventType::RemoveNeighbor: {
+        auto event = std::static_pointer_cast<MailboxEventRemoveNeighbor>(event_base);
+        int process_id = event->GetProcessId();
+        remove_handler_(process_id);
+        break;
+      }
       case MailboxEventType::Shutdown: {
         shutdown = true;
         break;
@@ -80,6 +93,10 @@ MailboxEventLoop::~MailboxEventLoop() {
 }
 
 void MailboxEventLoop::OnSend(MailboxSendHandlerType handler) { send_handler_ = handler; }
+
+void MailboxEventLoop::OnAdd(MailboxAddNeighborHandlerType handler) { add_handler_ = handler; }
+
+void MailboxEventLoop::OnRemove(MailboxRemoveNeighborHandlerType handler) { remove_handler_ = handler; }
 
 }  // namespace base
 }  // namespace husky
