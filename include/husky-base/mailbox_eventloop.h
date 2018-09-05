@@ -37,12 +37,18 @@ class MailboxEventLoop {
   // they need to be changed later, we need to provide thread-safe ways
   void OnSend(MailboxSendHandlerType handler);
 
+  void OnRemove(MailboxRemoveNeighborHandlerType handler);
+
+  void OnAdd(MailboxAddNeighborHandlerType handler);
+
  protected:
   std::unique_ptr<std::thread> thread_;
   MailboxEventQueuePtr queue_;
   std::unordered_map<int, MailboxRecvHandlerType> recv_handlers_;
   std::unordered_map<int, std::vector<std::pair<int, std::shared_ptr<BinStream>>>> cached_comm_;
   MailboxSendHandlerType send_handler_;
+  MailboxAddNeighborHandlerType add_handler_;
+  MailboxRemoveNeighborHandlerType remove_handler_;
 };
 
 }  // namespace base
